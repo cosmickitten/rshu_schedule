@@ -9,10 +9,10 @@ dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 if os.path.exists(dotenv_path):
     load_dotenv(dotenv_path)
     BASE_URL = os.environ.get("BASE_URL")
-    BUF_SIZE = os.environ.get("BUF_SIZE")
+    BUF_SIZE = int(os.environ.get("BUF_SIZE"))
     url = os.environ.get("url")
     token = os.environ.get("token")
-    chatid = os.environ.get("chatid")
+    ids = os.environ.get("ids").split(',')
     filename = os.environ.get("filename")
     group = os.environ.get("group")
 
@@ -69,7 +69,7 @@ def downloadFile(url):
 
 
 
-def sendFile():
+def sendFile(chatid):
     print(f"[+] Отправляю файл {filename}")
     
     files = {
@@ -78,9 +78,14 @@ def sendFile():
         }
 
     response = requests.post(f'https://api.telegram.org/bot{token}/sendDocument', files=files)
-    print(f"[+] Файл {filename} отправлен")
+    print(f"[+] Файл {filename} отправлен {chatid}")
 
-    
+
+def sendFileToEverybody():
+    for chatid in ids:
+        sendFile(chatid)
+
+
 if __name__ == "__main__":
     if checkfile():
         old=hashfile()
@@ -88,8 +93,8 @@ if __name__ == "__main__":
         new=hashfile()
         if old != new:
             print("[+] Новое рассписание")
-            sendFile()
+            sendFileToEverybody()
     else:
         downloadFile(parsePage(getPage(url)))
-        sendFile()
+        sendFileToEverybody()
     
