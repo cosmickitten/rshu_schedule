@@ -68,21 +68,33 @@ def downloadFile(url):
     print(f"[+] Загружен файл {filename}")
 
 
+def sendMessage(chatid,message):
+    data = {
+        'chat_id': chatid,
+        'text': message
+    }
+    
+    try:
+        response = requests.post(f'https://api.telegram.org/bot{token}/sendMessage', json=data)
+        
+    except Exception as e:
+        print(e)
 
 def sendFile(chatid):
     print(f"[+] Отправляю файл {filename}")
     
-    files = {
+    data = {
         'chat_id': (None, chatid),
         'document': open(filename, 'rb')
         }
 
-    response = requests.post(f'https://api.telegram.org/bot{token}/sendDocument', files=files)
+    response = requests.post(f'https://api.telegram.org/bot{token}/sendDocument', files=data)
     print(f"[+] Файл {filename} отправлен {chatid}")
 
 
 def sendFileToEverybody():
     for chatid in ids:
+        sendMessage(chatid,'Новое рассписание!')
         sendFile(chatid)
 
 
