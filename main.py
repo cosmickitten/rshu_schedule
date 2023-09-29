@@ -87,9 +87,11 @@ def sendFile(chatid):
         'chat_id': (None, chatid),
         'document': open(filename, 'rb')
         }
-
-    response = requests.post(f'https://api.telegram.org/bot{token}/sendDocument', files=data)
-    print(f"[+] Файл {filename} отправлен {chatid}")
+    try:
+        response = requests.post(f'https://api.telegram.org/bot{token}/sendDocument', files=data)
+        print(f"[+] Файл {filename} отправлен {chatid}")
+    except Exception as e:
+        print(e)
 
 
 def sendFileToEverybody():
