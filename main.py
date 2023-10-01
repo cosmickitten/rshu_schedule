@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
+
+
 if os.path.exists(dotenv_path):
     load_dotenv(dotenv_path)
     BASE_URL = os.environ.get("BASE_URL")
@@ -15,6 +17,8 @@ if os.path.exists(dotenv_path):
     ids = os.environ.get("ids").split(',')
     filename = os.environ.get("filename")
     group = os.environ.get("group")
+
+filename = dotenv_path = os.path.join(os.path.dirname(__file__), filename)
 
 
 def checkfile():
