@@ -100,7 +100,7 @@ def sendFile(chatid):
 
 def sendFileToEverybody():
     for chatid in ids:
-        sendMessage(chatid,'Новое рассписание!')
+        sendMessage(chatid,'Новое расписание!')
         sendFile(chatid)
 
 
@@ -110,7 +110,7 @@ if __name__ == "__main__":
         downloadFile(parsePage(getPage(url)))
         new=hashfile()
         if old != new:
-            print("[+] Новое рассписание")
+            print("[+] Новое расписание")
             sendFileToEverybody()
     else:
         downloadFile(parsePage(getPage(url)))
