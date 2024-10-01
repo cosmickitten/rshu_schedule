@@ -43,7 +43,6 @@ def hashfile():
 
 
 def getPage(url):
-    #print(f"Функция getPage url = {url}")
     r = requests.get(url)
     if r.status_code == 200:
         src = r.text
@@ -65,9 +64,7 @@ def parsePage(page):
     
 
 def downloadFile(url):
-    #print(f"1 Функция downloadFile url = {url}")
     url = BASE_URL + url
-    #print(f"2 Функция downloadFile url = {url}")
     response = requests.get(url)
     print(f"[+] Найден файл  {url}")
     with open(filename, mode="wb") as file:
@@ -115,8 +112,6 @@ if __name__ == "__main__":
         if old != new:
             print("[+] Новое рассписание")
             sendFileToEverybody()
-        else:
-             print(f"[+] SHA256 совпадают, файл не изменился")
     else:
         downloadFile(parsePage(getPage(url)))
         sendFileToEverybody()
