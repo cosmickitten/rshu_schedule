@@ -8,10 +8,14 @@
 ```sh
 $ git clone https://github.com/cosmickitten/rshu_schedule.git
 $ cd rshu_schedule
+$ mv .env_example .env
 $ pip install -r requirements.txt 
 $ python main.py
 ```
 
 ## Совет
 Добавьте выполнение скрипта в планировщик задач, чтобы знать, когда расписание изменилось. Например на 5 утра каждый день =)
-
+Пример для cron:
+```sh
+0 5 * * * /usr/bin/python /opt/rshu_schedule/main.py
+```
