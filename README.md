@@ -12,7 +12,7 @@ $ mv .env_example .env
 $ pip install -r requirements.txt 
 ```
 Настройте .env файл:
-group   -   название вашей группы на сайте с рассписанием
+group   -   название вашей группы на сайте с расписанием
 ids - ваш telegram id(можно указать несколько через запятую)
 token - токен вашего telegram бота, берётся у @botfather
 
