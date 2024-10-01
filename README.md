@@ -4,17 +4,22 @@
 ## Установка
 Расскажите как установить и использовать ваш проект, покажите пример кода:
 
-Установите npm-пакет с помощью команды:
+Установите с помощью команды:
 ```sh
 $ git clone https://github.com/cosmickitten/rshu_schedule.git
 $ cd rshu_schedule
 $ mv .env_example .env
 $ pip install -r requirements.txt 
-$ python main.py
 ```
+Настройте .env файл:
+group   -   название вашей группы на сайте с рассписанием
+ids - ваш telegram id(можно указать несколько через запятую)
+token - токен вашего telegram бота, берётся у @botfather
+
 
 ## Совет
 Добавьте выполнение скрипта в планировщик задач, чтобы знать, когда расписание изменилось. Например на 5 утра каждый день =)
+
 Пример для cron:
 ```sh
 0 5 * * * /usr/bin/python /opt/rshu_schedule/main.py
