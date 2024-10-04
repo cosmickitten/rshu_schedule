@@ -26,8 +26,8 @@ if os.path.exists(dotenv_path):
     group = os.environ.get("group")
 
 file_buffer= io.BytesIO()
-file_buffer.name=filename
 filename = dotenv_path = os.path.join(os.path.dirname(__file__), filename)
+file_buffer.name=filename
 
 def checkfile(file):
     isExists = os.path.exists(file) 
@@ -63,7 +63,7 @@ def downloadFile(url):
     print(f"[+] Найден файл  {url}")
     file_buffer.write(response.content)
     file_buffer.seek(0)
-    print(f"[+] Загружен файл {file_buffer.name}")
+    print(f"[+] Загружен файл inmemory_mod:: {file_buffer.name}")
     return file_buffer
 
 
@@ -84,11 +84,10 @@ def writeHash(hash):
     print(f"[+] Записан файл {hashfilename}")
 
 def readHashFromFile(file):
-    if checkfile(file):
-        with open(file, mode="r") as f:
-            hash = f.readline()
-        print(f"[+] SHA256 = {hash}")
-        return hash
+    with open(file, mode="r") as f:
+        hash = f.readline()
+    print(f"[+] SHA256 = {hash}")
+    return hash
 
 
 def sendFile(chatid,file):
@@ -126,19 +125,26 @@ def sendFileToEverybody(file):
 
 if __name__ == "__main__":
     if checkfile(hashfilename):
+        print(f"[+] Хэш текущего расписания")
         old_hash=readHashFromFile(hashfilename)
+        print(f"[+] Поиск и загрузка нового расписания")
         buffer=downloadFile(parsePage(getPage(url)))
+        print(f"[+] Хэш нового расписания")
         new_hash=getFileHash(buffer)
         if old_hash != new_hash:
             print("[+] Новое расписание")
             sendFileToEverybody()
+            writeHash(new_hash)
         else:
             print(f"[+] old_hash = {old_hash} \n[+] new_hash = {new_hash}")
+            print(f"[+] Хэш файлы совпадают")
+            print(f"[+] Расписание не изменилось")
     else:
         buffer=downloadFile(parsePage(getPage(url)))
         hash=getFileHash(buffer)
         writeHash(hash)
         sendFileToEverybody(buffer)
         
+    print(f"[+] Выход")
         
     
