@@ -91,7 +91,7 @@ def readHashFromFile(file):
 
 
 def sendFile(chatid,file):
-    print(f"[+] Отправляю файл {file}")
+    print(f"[+] Отправляю файл {file.name}")
     
     data = {
         'chat_id': (None, chatid),
@@ -99,7 +99,7 @@ def sendFile(chatid,file):
         }
     try:
         response = requests.post(f'https://api.telegram.org/bot{token}/sendDocument', files=data)
-        print(f"[+] Файл {file} отправлен {chatid}")
+        print(f"[+] Файл {file.name} отправлен {chatid}")
     except Exception as e:
         print(e)
 
@@ -140,9 +140,12 @@ if __name__ == "__main__":
             print(f"[+] Хэш файлы совпадают")
             print(f"[+] Расписание не изменилось")
     else:
+        print(f"[+] Поиск и загрузка нового расписания")
         buffer=downloadFile(parsePage(getPage(url)))
+        print(f"[+] Хэш нового расписания")
         hash=getFileHash(buffer)
         writeHash(hash)
+        print("[+] Новое расписание")
         sendFileToEverybody(buffer)
         
     print(f"[+] Выход")
