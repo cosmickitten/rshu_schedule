@@ -1,7 +1,8 @@
 #! /bin/bash
 cd /opt/rshu_schedule
-source /opt/rshu_schedule/venv/bin/activate
+git pull
 git chechout dev
+source /opt/rshu_schedule/venv/bin/activate
 python main.py 
 deactivate
 
