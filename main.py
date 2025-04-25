@@ -1,153 +1,158 @@
-#!/usr/bin/env python3 
-
-import requests
-import io
+#!/usr/bin/env python3
+import aiohttp
+import asyncio
 import hashlib
-from bs4 import BeautifulSoup
 import os
+from bs4 import BeautifulSoup
 from dotenv import load_dotenv
+from typing import Optional, List, Dict, Tuple
 
-
-
-
-
-dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
-
-
-if os.path.exists(dotenv_path):
-    load_dotenv(dotenv_path)
-    BASE_URL = os.environ.get("BASE_URL")
-    BUF_SIZE = int(os.environ.get("BUF_SIZE"))
-    url = os.environ.get("url")
-    token = os.environ.get("token")
-    ids = os.environ.get("ids").split(',')
-    filename = os.environ.get("filename")
-    hashfilename = os.environ.get("hashfilename")
-    group = os.environ.get("group")
-
-file_buffer= io.BytesIO()
-filename = dotenv_path = os.path.join(os.path.dirname(__file__), filename)
-file_buffer.name=filename
-
-def checkfile(file):
-    isExists = os.path.exists(file) 
-    print(f"[+] Файл {file} существует: {isExists}")
-    return isExists
-
-
-
-def getPage(url):
-    r = requests.get(url)
-    if r.status_code == 200:
-        src = r.text
-    else:
-        print(f"Ошибка сети {r.status_code}")
-    return(src)
-
-def parsePage(page):
-    text = ''
-    url = ''
-    soup = BeautifulSoup(page, "lxml")
-    page_all_a=soup.find_all("a")
-    for i in page_all_a:
-        url=i.get("href")
-        text=i.text
-        if text == group:
-            print(f"[+] {text}  {url}")
-            return url
+class AsyncScheduleParser:
+    """Асинхронный парсер расписаний университета"""
     
+    def __init__(self):
+        self.load_config()
+        self.session: Optional[aiohttp.ClientSession] = None
+        self.BUF_SIZE = 65536
 
-def downloadFile(url):
-    url = BASE_URL + url
-    response = requests.get(url)
-    print(f"[+] Найден файл  {url}")
-    file_buffer.write(response.content)
-    file_buffer.seek(0)
-    print(f"[+] Загружен файл inmemory_mod:: {file_buffer.name}")
-    return file_buffer
-
-
-def getFileHash(file):
-    with open(hashlib.__file__, "rb") as filebuffer:
-        digest = hashlib.file_digest(filebuffer, "sha256")
-        filebuffer.seek(0)
-
-    sha256hex=digest.hexdigest()
-        
-    print(f"[+] SHA256 = {sha256hex}")
-    return sha256hex
-
-def writeHash(hash):
-    with open(hashfilename, mode="w") as file:
-        file.write(hash)
- 
-    print(f"[+] Записан файл {hashfilename}")
-
-def readHashFromFile(file):
-    with open(file, mode="r") as f:
-        hash = f.readline()
-    print(f"[+] SHA256 = {hash}")
-    return hash
-
-
-def sendFile(chatid,file):
-    print(f"[+] Отправляю файл {file.name}")
-    
-    data = {
-        'chat_id': (None, chatid),
-        'document':('shedule.pdf',io.BufferedReader(io.BytesIO(file.read())))
+    def load_config(self):
+        """Загружает конфигурацию из .env"""
+        load_dotenv(os.path.join(os.path.dirname(__file__), '.env'))
+        self.config = {
+            'base_url': os.getenv("BASE_URL"),
+            'schedule_url': os.getenv("SCHEDULE_URL"),
+            'telegram_token': os.getenv("TELEGRAM_TOKEN"),
+            'chat_ids': os.getenv("CHAT_IDS").split(','),
+            'group_name': os.getenv("GROUP_NAME"),
+            'files': {
+                'schedule': {
+                    'output': os.getenv("SCHEDULE_FILENAME", "schedule.pdf"),
+                    'hash': os.getenv("SCHEDULE_HASHFILE", "schedule_hash.txt")
+                },
+                'exams': {
+                    'output': os.getenv("EXAMS_FILENAME", "exams.pdf"),
+                    'hash': os.getenv("EXAMS_HASHFILE", "exams_hash.txt")
+                }
+            }
         }
-    try:
-        response = requests.post(f'https://api.telegram.org/bot{token}/sendDocument', files=data)
-        print(f"[+] Файл {file.name} отправлен {chatid}")
-    except Exception as e:
-        print(e)
 
-def sendMessage(chatid,message):
-    data = {
-        'chat_id': chatid,
-        'text': message
-    }
-    
-    try:
-        response = requests.post(f'https://api.telegram.org/bot{token}/sendMessage', json=data)
+    async def __aenter__(self):
+        """Инициализация сессии при входе в контекст"""
+        self.session = aiohttp.ClientSession()
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb):
+        """Закрытие сессии при выходе из контекста"""
+        if self.session:
+            await self.session.close()
+
+    async def fetch_page(self, url: str) -> Optional[str]:
+        """Асинхронная загрузка страницы"""
+        try:
+            async with self.session.get(url) as response:
+                response.raise_for_status()
+                return await response.text()
+        except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+            print(f"Page fetch error: {e}")
+            return None
+
+    def parse_link(self, html: str, target_text: str) -> Optional[str]:
+        """Парсинг ссылки из HTML"""
+        soup = BeautifulSoup(html, 'lxml')
+        for a in soup.find_all('a'):
+            if a.text.strip() == target_text:
+                return a.get('href')
+        return None
+
+    async def download_file(self, url: str) -> Optional[bytes]:
+        """Асинхронная загрузка файла"""
+        try:
+            async with self.session.get(url) as response:
+                response.raise_for_status()
+                return await response.read()
+        except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+            print(f"File download error: {e}")
+            return None
+
+    def calculate_hash(self, data: bytes) -> str:
+        """Вычисление хеша файла"""
+        return hashlib.sha256(data).hexdigest()
+
+    def read_hash(self, hash_file: str) -> Optional[str]:
+        """Чтение сохраненного хеша"""
+        try:
+            with open(hash_file, 'r') as f:
+                return f.read().strip()
+        except IOError:
+            return None
+
+    def save_hash(self, hash_value: str, hash_file: str):
+        """Сохранение хеша в файл"""
+        with open(hash_file, 'w') as f:
+            f.write(hash_value)
+
+    async def send_to_telegram(self, file_data: bytes, file_name: str, caption: str):
+        """Асинхронная отправка в Telegram"""
+        form_data = aiohttp.FormData()
+        form_data.add_field('chat_id', self.config['chat_ids'][0])
+        form_data.add_field('document', file_data, filename=file_name)
+        form_data.add_field('caption', caption)
+
+        try:
+            async with self.session.post(
+                f'https://api.telegram.org/bot{self.config["telegram_token"]}/sendDocument',
+                data=form_data
+            ) as response:
+                response.raise_for_status()
+        except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+            print(f"Telegram send error: {e}")
+
+    async def process_schedule(self, schedule_type: str, target_text: str):
+        """Основной процесс обработки расписания"""
+        print(f"\nProcessing {schedule_type} schedule...")
         
-    except Exception as e:
-        print(e)
+        conf = self.config['files'][schedule_type]
+        html = await self.fetch_page(self.config['schedule_url'])
+        if not html:
+            return
 
-def sendFileToEverybody(file):
-    for chatid in ids:
-        sendMessage(chatid,'Новое расписание!')
-        sendFile(chatid,file)
+        file_url = self.parse_link(html, target_text)
+        if not file_url:
+            return
 
+        full_url = f"{self.config['base_url']}{file_url}" if self.config['base_url'] else file_url
+        file_data = await self.download_file(full_url)
+        if not file_data:
+            return
 
+        current_hash = self.calculate_hash(file_data)
+        old_hash = self.read_hash(conf['hash'])
 
+        if old_hash != current_hash:
+            print(f"New {schedule_type} schedule detected!")
+            self.save_hash(current_hash, conf['hash'])
+            await self.send_to_telegram(
+                file_data,
+                conf['output'],
+                f"New {schedule_type} schedule"
+            )
+        else:
+            print(f"No changes in {schedule_type} schedule")
+
+async def main():
+    """Точка входа в приложение"""
+    async with AsyncScheduleParser() as parser:
+        # Обрабатываем обычное расписание
+        await parser.process_schedule(
+            'schedule',
+            parser.config['group_name']
+        )
+        
+        # Обрабатываем расписание экзаменов
+        await parser.process_schedule(
+            'exams',
+            f"{parser.config['group_name']} (зачёты, экзамены)"
+        )
 
 if __name__ == "__main__":
-    if checkfile(hashfilename):
-        print(f"[+] Хэш текущего расписания")
-        old_hash=readHashFromFile(hashfilename)
-        print(f"[+] Поиск и загрузка нового расписания")
-        buffer=downloadFile(parsePage(getPage(url)))
-        print(f"[+] Хэш нового расписания")
-        new_hash=getFileHash(buffer)
-        if old_hash != new_hash:
-            print("[+] Новое расписание")
-            sendFileToEverybody()
-            writeHash(new_hash)
-        else:
-            print(f"[+] old_hash = {old_hash} \n[+] new_hash = {new_hash}")
-            print(f"[+] Хэш файлы совпадают")
-            print(f"[+] Расписание не изменилось")
-    else:
-        print(f"[+] Поиск и загрузка нового расписания")
-        buffer=downloadFile(parsePage(getPage(url)))
-        print(f"[+] Хэш нового расписания")
-        hash=getFileHash(buffer)
-        writeHash(hash)
-        print("[+] Новое расписание")
-        sendFileToEverybody(buffer)
-        
-    print(f"[+] Выход")
-        
-    
+    asyncio.run(main())

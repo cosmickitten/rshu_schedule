@@ -163,3 +163,5 @@ cython_debug/
 *.pdf
 sha256.txt
 run_venv.sh
+schedule_hash.txt
+exams_hash.txt
