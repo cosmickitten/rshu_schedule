@@ -114,7 +114,7 @@ async def main():
     async with aiohttp.ClientSession() as session:
         tasks = [
             downloader.process_in_memory(session, 'schedule', downloader.config['group_name']),
-            downloader.process_in_memory(session, 'exams', f"{downloader.config['group_name']} (зачеты экзамены)")
+            downloader.process_in_memory(session, 'exams', f"{downloader.config['group_name']} (зачеты, экзамены)")
         ]
         await asyncio.gather(*tasks)
 
