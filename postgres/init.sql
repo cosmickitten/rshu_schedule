@@ -1,3 +1,5 @@
+\c rshu_schedule
+
 CREATE TABLE IF NOT EXISTS user_settings (
     id SERIAL PRIMARY KEY,
     telegram_id VARCHAR(255) UNIQUE NOT NULL,
