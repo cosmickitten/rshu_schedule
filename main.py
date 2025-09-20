@@ -24,7 +24,9 @@ class ScheduleDownloader:
     
     def load_config(self) -> dict:
         """Загрузка конфигурации"""
-        load_dotenv()
+        dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
+        print(dotenv_path)
+        load_dotenv(dotenv_path)
         return {
             'base_url': os.getenv("BASE_URL"),
             'schedule_url': os.getenv("SCHEDULE_URL"),
@@ -46,6 +48,7 @@ class ScheduleDownloader:
     async def get_schedule_link(self, session: aiohttp.ClientSession, target_text: str) -> Optional[str]:
         """Поиск ссылки на расписание"""
         async with session.get(self.config['schedule_url']) as response:
+            print(target_text)
             html = await response.text()
             soup = BeautifulSoup(html, 'lxml')
             for a in soup.find_all('a'):
