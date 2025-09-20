@@ -30,7 +30,7 @@ class ScheduleDownloader:
             'base_url': os.getenv("BASE_URL"),
             'schedule_url': os.getenv("SCHEDULE_URL"),
             'telegram_token': os.getenv("TELEGRAM_TOKEN"),
-            'chat_ids': os.getenv("CHAT_IDS").split(','),
+            'chat_ids': str(os.getenv("CHAT_IDS")).split(','),
             'group_name': os.getenv("GROUP_NAME"),
             'files': {
                 'schedule': {
